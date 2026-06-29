@@ -1,0 +1,174 @@
+﻿<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Анализ рынка зарплат</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <h1 class="hero-title">Анализ рынка зарплат</h1>
+      <div class="top-actions">
+        <button class="button" id="showInputs" type="button">Показать данные</button>
+      </div>
+    </header>
+
+    <div class="shell" id="layoutShell">
+      <section class="input-pane" aria-label="Ввод данных">
+        <div class="pane-head">
+          <h2 class="pane-title">Основные данные</h2>
+          <button class="ghost-button" id="hideInputs" type="button" aria-label="Свернуть основные данные" title="Свернуть основные данные">−</button>
+        </div>
+
+        <div class="fields">
+          <label class="wide">
+            Название вакансии
+            <input id="vacancy" type="text" value="Биржевик-трейдер">
+          </label>
+          <label class="wide">
+            Запрос в базу резюме
+            <textarea id="resumeQuery">https://hh.ru/search/resume?employment=full&schedule=fullDay&schedule=remote&ored_clusters=true&order_by=relevance&items_on_page=50&search_period=30&age_from=27&age_to=40&job_search_status=active_search&job_search_status=looking_for_offers&language=eng.a2&filter_exp_period=last_three_years&filter_exp_industry=7&filter_exp_industry=43&filter_exp_industry=44&filter_exp_industry=389&label=only_with_age&label=only_with_gender&hhtmFrom=resume_search_result&hhtmFromLabel=resume_search_line&text=биржевик%2C+трейдер*%2C+аналитик*%2C+крипто*</textarea>
+          </label>
+          <label>
+            Регион поиска
+            <input id="region" type="text" value="МСК +- 2ч">
+          </label>
+          <label>
+            График
+            <input id="schedule" type="text" value="5/2">
+          </label>
+          <label>
+            Офис \ дом
+            <input id="workMode" type="text" value="Удаленно">
+          </label>
+          <label>
+            Гражданство
+            <input id="citizenship" type="text" value="Любое">
+          </label>
+          <label>
+            Макс ЗП
+            <input id="maxSalary" type="number" min="1" step="1000" value="400000">
+          </label>
+          <label>
+            Дата анализа
+            <input id="analysisDate" type="date" value="2025-01-23">
+          </label>
+          <label class="wide">
+            Соискателей всего
+            <input id="totalCandidates" type="number" min="0" step="1" value="1623">
+          </label>
+        </div>
+
+        <h2>Сегменты зарплаты</h2>
+        <table class="segment-table" aria-label="Количество кандидатов по сегментам зарплаты">
+          <thead>
+            <tr>
+              <th>№</th>
+              <th>От</th>
+              <th>До</th>
+              <th>Кандидаты</th>
+            </tr>
+          </thead>
+          <tbody id="segmentsInput"></tbody>
+        </table>
+        <h2>Действия</h2>
+        <div class="actions">
+          <button class="button primary" id="copyReport" type="button">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            Скопировать
+          </button>
+          <button class="button" id="downloadCsv" type="button">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>
+            CSV
+          </button>
+          <button class="button" id="printReport" type="button">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><path d="M6 14h12v8H6z"></path></svg>
+            Печать
+          </button>
+        </div>
+        <div class="status" id="status" aria-live="polite"></div>
+      </section>
+
+      <section class="report-pane" aria-label="Итоговый отчет">
+        <div class="metrics" aria-label="Ключевые показатели">
+          <div class="metric">
+            <span>Целевых кандидатов</span>
+            <strong id="metricTotal">0</strong>
+          </div>
+          <div class="metric">
+            <span>Указали зарплату</span>
+            <strong id="metricWithSalary">0</strong>
+          </div>
+          <div class="metric">
+            <span>Медиана ожиданий</span>
+            <strong id="metricAverage">0</strong>
+          </div>
+          <div class="metric">
+            <span>Не указали ЗП</span>
+            <strong id="metricMissing">0%</strong>
+          </div>
+        </div>
+
+        <article class="report" id="report">
+          <h1 class="report-title">Зарплатные ожидания кандидатов</h1>
+
+          <div class="report-grid">
+            <div class="report-cell">
+              <div class="label">Желаемая должность</div>
+              <div class="value" id="outVacancy"></div>
+            </div>
+            <div class="report-cell">
+              <div class="label">Регион проживания</div>
+              <div class="value" id="outRegion"></div>
+            </div>
+            <div class="report-cell">
+              <div class="label">Данные за период</div>
+              <div class="value"><span id="outDateFrom"></span><br><span id="outDateTo"></span></div>
+            </div>
+            <div class="report-cell">
+              <div class="label">Целевых кандидатов в регионе</div>
+              <div class="value" id="outTotal"></div>
+            </div>
+            <div class="report-cell">
+              <div class="label">Кандидатов указавших зарплатные ожидания</div>
+              <div class="value" id="outWithSalary"></div>
+            </div>
+            <div class="report-cell">
+              <div class="label">Медианные ожидания кандидатов</div>
+              <div class="value" id="outAverage"></div>
+            </div>
+          </div>
+
+          <div class="report-section">Зарплатные ожидания в разбивке по суммам</div>
+          <table class="result-table" aria-label="Зарплатные ожидания в разбивке по суммам">
+            <thead>
+              <tr>
+                <th>ОТ</th>
+                <th>ДО</th>
+                <th>Кол-во кандидатов</th>
+                <th>Доля сегмента от всех кандидатов</th>
+              </tr>
+            </thead>
+            <tbody id="resultRows"></tbody>
+          </table>
+
+          <div class="query-wrap" id="queryWrap">
+            <div class="query-head">
+              <span></span>
+              <button class="query-toggle" id="toggleQuery" type="button" aria-label="Скрыть поисковый запрос" title="Скрыть поисковый запрос">−</button>
+            </div>
+            <div class="query-box">
+              <strong>Поисковый запрос</strong>
+              <a id="outQuery" href="#" target="_blank" rel="noreferrer"></a>
+            </div>
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+  <script src="script.js" defer></script>
+</body>
+</html>
+
