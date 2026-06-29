@@ -1,0 +1,1035 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Анализ рынка зарплат</title>
+  <style>
+    :root {
+      --mint-50: #F0FBEE;
+      --mint-100: #E0F1DC;
+      --sage: #B9C697;
+      --sun: #fece52;
+      --sky: #499fcd;
+      --ink: #17212b;
+      --muted: #657184;
+      --line: rgba(73, 159, 205, 0.32);
+      --panel: rgba(255, 255, 255, 0.78);
+      --white: #ffffff;
+      --shadow: 0 24px 70px rgba(44, 86, 83, 0.16);
+      --soft-shadow: 0 14px 34px rgba(73, 159, 205, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 10%, rgba(254, 206, 82, 0.32), transparent 26%),
+        radial-gradient(circle at 88% 18%, rgba(73, 159, 205, 0.24), transparent 30%),
+        linear-gradient(135deg, var(--mint-50) 0%, var(--mint-100) 52%, #f8fff4 100%);
+      font-family: Arial, Helvetica, sans-serif;
+      letter-spacing: 0;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    .page {
+      min-height: 100vh;
+      padding: 28px;
+    }
+
+    .hero {
+      position: relative;
+      max-width: 1200px;
+      margin: 0 auto 24px;
+      text-align: center;
+    }
+
+    .hero-title {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 74px;
+      margin: 0;
+      padding: 14px 34px;
+      border: 2px solid rgba(73, 159, 205, 0.48);
+      border-radius: 999px;
+      color: #173242;
+      background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.92), rgba(240, 251, 238, 0.88)),
+        linear-gradient(135deg, rgba(254, 206, 82, 0.38), rgba(73, 159, 205, 0.22));
+      box-shadow: var(--shadow);
+      font-size: clamp(28px, 4vw, 48px);
+      line-height: 1.05;
+      font-weight: 800;
+    }
+
+    .hero-title::before,
+    .hero-title::after {
+      content: "";
+      width: 12px;
+      height: 12px;
+      margin: 0 14px;
+      border-radius: 50%;
+      background: var(--sun);
+      box-shadow: 0 0 0 8px rgba(254, 206, 82, 0.2);
+    }
+
+    .top-actions {
+      position: absolute;
+      top: 15px;
+      right: 0;
+      display: none;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: minmax(340px, 420px) minmax(0, 980px);
+      justify-content: center;
+      gap: 24px;
+      align-items: start;
+      transition: grid-template-columns 220ms ease;
+    }
+
+    .shell.is-collapsed {
+      grid-template-columns: minmax(0, 980px);
+    }
+
+    body.inputs-collapsed .input-pane {
+      display: none;
+    }
+
+    body.inputs-collapsed .top-actions {
+      display: block;
+    }
+
+    .input-pane,
+    .report,
+    .metric {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(14px);
+      box-shadow: var(--shadow);
+    }
+
+    .input-pane {
+      position: sticky;
+      top: 20px;
+      max-height: calc(100vh - 40px);
+      border-radius: 8px;
+      padding: 20px;
+      overflow: auto;
+    }
+
+    .report-pane {
+      min-width: 0;
+    }
+
+    .pane-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .pane-title {
+      margin: 0;
+      color: #294456;
+      font-size: 15px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      margin: 22px 0 12px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      margin: 10px 0;
+      color: #314255;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      border: 1.5px solid rgba(73, 159, 205, 0.28);
+      border-radius: 8px;
+      padding: 11px 12px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.74);
+      outline: none;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92);
+    }
+
+    textarea {
+      min-height: 74px;
+      resize: vertical;
+      line-height: 1.35;
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: var(--sky);
+      box-shadow: 0 0 0 4px rgba(73, 159, 205, 0.17);
+    }
+
+    .fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 12px;
+    }
+
+    .wide {
+      grid-column: 1 / -1;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .button,
+    .ghost-button,
+    .query-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .button {
+      gap: 8px;
+      min-height: 40px;
+      border-radius: 999px;
+      padding: 9px 15px;
+      color: #163142;
+      background: rgba(255, 255, 255, 0.78);
+      box-shadow: inset 0 0 0 1.5px rgba(73, 159, 205, 0.38), var(--soft-shadow);
+    }
+
+    .button.primary {
+      color: #10202b;
+      background: linear-gradient(135deg, var(--sun), #ffe79d);
+      box-shadow: inset 0 0 0 1.5px rgba(185, 198, 151, 0.7), 0 12px 26px rgba(254, 206, 82, 0.32);
+    }
+
+    .ghost-button {
+      min-width: 38px;
+      min-height: 38px;
+      border-radius: 999px;
+      color: #24536f;
+      background: rgba(255, 255, 255, 0.62);
+      box-shadow: inset 0 0 0 1.5px rgba(73, 159, 205, 0.28);
+    }
+
+    .button:hover,
+    .ghost-button:hover,
+    .query-toggle:hover {
+      transform: translateY(-1px);
+    }
+
+    .icon {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 16px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .segment-table,
+    .result-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      table-layout: fixed;
+      overflow: hidden;
+      border: 2px solid rgba(73, 159, 205, 0.42);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .segment-table th,
+    .segment-table td,
+    .result-table th,
+    .result-table td {
+      border-right: 1px solid rgba(73, 159, 205, 0.22);
+      border-bottom: 1px solid rgba(73, 159, 205, 0.2);
+      line-height: 1.25;
+    }
+
+    .segment-table th,
+    .segment-table td {
+      padding: 8px;
+      text-align: right;
+      font-size: 13px;
+    }
+
+    .segment-table th:first-child,
+    .segment-table td:first-child {
+      text-align: center;
+      width: 44px;
+    }
+
+    .segment-table th,
+    .result-table th {
+      color: #1f3f56;
+      background: linear-gradient(135deg, rgba(224, 241, 220, 0.9), rgba(73, 159, 205, 0.18));
+      font-weight: 800;
+    }
+
+    .segment-table tr:last-child td,
+    .result-table tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .segment-table th:last-child,
+    .segment-table td:last-child,
+    .result-table th:last-child,
+    .result-table td:last-child {
+      border-right: 0;
+    }
+
+    .segment-table input {
+      height: 34px;
+      padding: 6px 8px;
+      text-align: right;
+      border-radius: 8px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(130px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .metric {
+      position: relative;
+      min-height: 92px;
+      border-radius: 8px;
+      padding: 16px;
+      overflow: hidden;
+    }
+
+    .metric::after {
+      content: "";
+      position: absolute;
+      right: -18px;
+      bottom: -22px;
+      width: 74px;
+      height: 74px;
+      border-radius: 50%;
+      background: rgba(254, 206, 82, 0.32);
+    }
+
+    .metric:nth-child(2)::after {
+      background: rgba(73, 159, 205, 0.24);
+    }
+
+    .metric:nth-child(3)::after {
+      background: rgba(185, 198, 151, 0.38);
+    }
+
+    .metric span {
+      position: relative;
+      z-index: 1;
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      line-height: 1.25;
+    }
+
+    .metric strong {
+      position: relative;
+      z-index: 1;
+      display: block;
+      margin-top: 8px;
+      font-size: 25px;
+      line-height: 1.2;
+      font-weight: 800;
+    }
+
+    .report {
+      border-radius: 8px;
+      padding: 30px;
+    }
+
+    .report-title {
+      margin: 0 0 24px;
+      color: #162b36;
+      font-size: 28px;
+      line-height: 1.15;
+      font-weight: 800;
+    }
+
+    .report-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .report-cell {
+      min-height: 86px;
+      border: 1.5px solid rgba(185, 198, 151, 0.62);
+      border-radius: 8px;
+      padding: 13px;
+      background: rgba(240, 251, 238, 0.6);
+    }
+
+    .report-cell .label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .report-cell .value {
+      margin-top: 9px;
+      font-size: 16px;
+      font-weight: 800;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .report-section {
+      margin-top: 22px;
+      color: #173242;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .result-table {
+      margin-top: 12px;
+    }
+
+    .result-table th,
+    .result-table td {
+      padding: 11px 10px;
+      text-align: right;
+      font-size: 14px;
+    }
+
+    .result-table tbody td {
+      color: #142631;
+      font-weight: 650;
+    }
+
+    .result-table .share-cell {
+      font-weight: 800;
+      transition: background-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .result-table th:first-child,
+    .result-table td:first-child {
+      text-align: left;
+    }
+
+    .query-wrap {
+      margin-top: 20px;
+      padding-top: 14px;
+      border-top: 1.5px dashed rgba(73, 159, 205, 0.34);
+    }
+
+    .query-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .query-toggle {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      color: rgba(36, 83, 111, 0.48);
+      background: rgba(255, 255, 255, 0.5);
+      box-shadow: inset 0 0 0 1px rgba(73, 159, 205, 0.22);
+    }
+
+    .query-box {
+      display: grid;
+      grid-template-columns: 160px minmax(0, 1fr);
+      gap: 12px;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+
+    .query-box strong {
+      color: var(--muted);
+      text-transform: uppercase;
+      font-size: 12px;
+    }
+
+    .query-box a {
+      color: #246f9a;
+      overflow-wrap: anywhere;
+    }
+
+    .query-hidden .query-box {
+      display: none;
+    }
+
+    .note {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .status {
+      margin-top: 10px;
+      min-height: 18px;
+      color: #2f7d63;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    @media (max-width: 1040px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .input-pane {
+        position: static;
+        max-height: none;
+      }
+
+      .metrics,
+      .report-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .top-actions {
+        position: static;
+        justify-content: center;
+        margin-top: 14px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        padding: 18px 12px;
+      }
+
+      .hero-title {
+        min-height: 62px;
+        padding: 12px 20px;
+      }
+
+      .hero-title::before,
+      .hero-title::after {
+        display: none;
+      }
+
+      .fields,
+      .metrics,
+      .report-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .report,
+      .input-pane {
+        padding: 18px;
+        border-radius: 8px;
+      }
+
+      .result-table th,
+      .result-table td {
+        padding: 8px 6px;
+        font-size: 12px;
+      }
+
+      .query-box {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .hero,
+      .input-pane,
+      .metrics {
+        display: none;
+      }
+
+      .page {
+        padding: 0;
+      }
+
+      .shell {
+        display: block;
+      }
+
+      .report {
+        border: 0;
+        box-shadow: none;
+        border-radius: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <h1 class="hero-title">Анализ рынка зарплат</h1>
+      <div class="top-actions">
+        <button class="button" id="showInputs" type="button">Показать данные</button>
+      </div>
+    </header>
+
+    <div class="shell" id="layoutShell">
+      <section class="input-pane" aria-label="Ввод данных">
+        <div class="pane-head">
+          <h2 class="pane-title">Основные данные</h2>
+          <button class="ghost-button" id="hideInputs" type="button" aria-label="Свернуть основные данные" title="Свернуть основные данные">−</button>
+        </div>
+
+        <div class="fields">
+          <label class="wide">
+            Название вакансии
+            <input id="vacancy" type="text" value="Биржевик-трейдер">
+          </label>
+          <label class="wide">
+            Запрос в базу резюме
+            <textarea id="resumeQuery">https://hh.ru/search/resume?employment=full&schedule=fullDay&schedule=remote&ored_clusters=true&order_by=relevance&items_on_page=50&search_period=30&age_from=27&age_to=40&job_search_status=active_search&job_search_status=looking_for_offers&language=eng.a2&filter_exp_period=last_three_years&filter_exp_industry=7&filter_exp_industry=43&filter_exp_industry=44&filter_exp_industry=389&label=only_with_age&label=only_with_gender&hhtmFrom=resume_search_result&hhtmFromLabel=resume_search_line&text=биржевик%2C+трейдер*%2C+аналитик*%2C+крипто*</textarea>
+          </label>
+          <label>
+            Регион поиска
+            <input id="region" type="text" value="МСК +- 2ч">
+          </label>
+          <label>
+            График
+            <input id="schedule" type="text" value="5/2">
+          </label>
+          <label>
+            Офис \ дом
+            <input id="workMode" type="text" value="Удаленно">
+          </label>
+          <label>
+            Гражданство
+            <input id="citizenship" type="text" value="Любое">
+          </label>
+          <label>
+            Макс ЗП
+            <input id="maxSalary" type="number" min="1" step="1000" value="400000">
+          </label>
+          <label>
+            Дата анализа
+            <input id="analysisDate" type="date" value="2025-01-23">
+          </label>
+          <label class="wide">
+            Соискателей всего
+            <input id="totalCandidates" type="number" min="0" step="1" value="1623">
+          </label>
+        </div>
+
+        <h2>Сегменты зарплаты</h2>
+        <table class="segment-table" aria-label="Количество кандидатов по сегментам зарплаты">
+          <thead>
+            <tr>
+              <th>№</th>
+              <th>От</th>
+              <th>До</th>
+              <th>Кандидаты</th>
+            </tr>
+          </thead>
+          <tbody id="segmentsInput"></tbody>
+        </table>
+        <h2>Действия</h2>
+        <div class="actions">
+          <button class="button primary" id="copyReport" type="button">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            Скопировать
+          </button>
+          <button class="button" id="downloadCsv" type="button">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>
+            CSV
+          </button>
+          <button class="button" id="printReport" type="button">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><path d="M6 14h12v8H6z"></path></svg>
+            Печать
+          </button>
+        </div>
+        <div class="status" id="status" aria-live="polite"></div>
+      </section>
+
+      <section class="report-pane" aria-label="Итоговый отчет">
+        <div class="metrics" aria-label="Ключевые показатели">
+          <div class="metric">
+            <span>Целевых кандидатов</span>
+            <strong id="metricTotal">0</strong>
+          </div>
+          <div class="metric">
+            <span>Указали зарплату</span>
+            <strong id="metricWithSalary">0</strong>
+          </div>
+          <div class="metric">
+            <span>Медиана ожиданий</span>
+            <strong id="metricAverage">0</strong>
+          </div>
+          <div class="metric">
+            <span>Не указали ЗП</span>
+            <strong id="metricMissing">0%</strong>
+          </div>
+        </div>
+
+        <article class="report" id="report">
+          <h1 class="report-title">Зарплатные ожидания кандидатов</h1>
+
+          <div class="report-grid">
+            <div class="report-cell">
+              <div class="label">Желаемая должность</div>
+              <div class="value" id="outVacancy"></div>
+            </div>
+            <div class="report-cell">
+              <div class="label">Регион проживания</div>
+              <div class="value" id="outRegion"></div>
+            </div>
+            <div class="report-cell">
+              <div class="label">Данные за период</div>
+              <div class="value"><span id="outDateFrom"></span><br><span id="outDateTo"></span></div>
+            </div>
+            <div class="report-cell">
+              <div class="label">Целевых кандидатов в регионе</div>
+              <div class="value" id="outTotal"></div>
+            </div>
+            <div class="report-cell">
+              <div class="label">Кандидатов указавших зарплатные ожидания</div>
+              <div class="value" id="outWithSalary"></div>
+            </div>
+            <div class="report-cell">
+              <div class="label">Медианные ожидания кандидатов</div>
+              <div class="value" id="outAverage"></div>
+            </div>
+          </div>
+
+          <div class="report-section">Зарплатные ожидания в разбивке по суммам</div>
+          <table class="result-table" aria-label="Зарплатные ожидания в разбивке по суммам">
+            <thead>
+              <tr>
+                <th>ОТ</th>
+                <th>ДО</th>
+                <th>Кол-во кандидатов</th>
+                <th>Доля сегмента от всех кандидатов</th>
+              </tr>
+            </thead>
+            <tbody id="resultRows"></tbody>
+          </table>
+
+          <div class="query-wrap" id="queryWrap">
+            <div class="query-head">
+              <span></span>
+              <button class="query-toggle" id="toggleQuery" type="button" aria-label="Скрыть поисковый запрос" title="Скрыть поисковый запрос">−</button>
+            </div>
+            <div class="query-box">
+              <strong>Поисковый запрос</strong>
+              <a id="outQuery" href="#" target="_blank" rel="noreferrer"></a>
+            </div>
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const initialCounts = [0, 23, 75, 134, 73, 94, 76, 59, 45, 15];
+    const segmentBody = document.querySelector("#segmentsInput");
+    const resultRows = document.querySelector("#resultRows");
+    const statusEl = document.querySelector("#status");
+    const layoutShell = document.querySelector("#layoutShell");
+    const queryWrap = document.querySelector("#queryWrap");
+    const toggleQueryButton = document.querySelector("#toggleQuery");
+
+    const ids = [
+      "vacancy",
+      "resumeQuery",
+      "region",
+      "schedule",
+      "workMode",
+      "citizenship",
+      "maxSalary",
+      "analysisDate",
+      "totalCandidates"
+    ];
+
+    function numberValue(id) {
+      return Math.max(0, Number(document.querySelector("#" + id).value) || 0);
+    }
+
+    function textValue(id) {
+      return document.querySelector("#" + id).value.trim();
+    }
+
+    function formatNumber(value) {
+      return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(value || 0);
+    }
+
+    function formatMoney(value) {
+      return new Intl.NumberFormat("ru-RU", {
+        maximumFractionDigits: 0
+      }).format(value || 0) + " ₽";
+    }
+
+    function formatPercent(value) {
+      return new Intl.NumberFormat("ru-RU", {
+        style: "percent",
+        maximumFractionDigits: 1
+      }).format(value || 0);
+    }
+
+    function formatDate(date) {
+      if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
+      return new Intl.DateTimeFormat("ru-RU").format(date);
+    }
+
+    function shareHeatStyle(count, maxCount) {
+      if (!count || !maxCount) {
+        return "background-color: rgba(255, 255, 255, 0.72);";
+      }
+
+      const intensity = Math.min(1, count / maxCount);
+      const saturation = 30 + intensity * 14;
+      const lightness = 96 - intensity * 26;
+      const edgeAlpha = 0.12 + intensity * 0.2;
+
+      return [
+        `background-color: hsl(102 ${saturation}% ${lightness}%);`,
+        `box-shadow: inset 4px 0 0 rgba(73, 159, 205, ${edgeAlpha});`
+      ].join(" ");
+    }
+
+    function buildSegments(maxSalary) {
+      const width = Math.floor(maxSalary / 10) - 1;
+      return Array.from({ length: 10 }, (_, index) => {
+        const from = index === 0 ? 0 : index * (width + 1);
+        const to = index === 9 ? maxSalary : from + width;
+        return { index: index + 1, from, to };
+      });
+    }
+
+    function groupedMedian(segments, counts, total) {
+      if (!total) return 0;
+
+      const target = total / 2;
+      let cumulative = 0;
+
+      for (let index = 0; index < segments.length; index += 1) {
+        const count = counts[index] || 0;
+        const nextCumulative = cumulative + count;
+
+        if (nextCumulative >= target && count > 0) {
+          const segment = segments[index];
+          const width = segment.to - segment.from + 1;
+          return segment.from + ((target - cumulative) / count) * width;
+        }
+
+        cumulative = nextCumulative;
+      }
+
+      return 0;
+    }
+
+    function getCounts() {
+      return Array.from(document.querySelectorAll("[data-count]")).map((input) => {
+        return Math.max(0, Number(input.value) || 0);
+      });
+    }
+
+    function setText(id, value) {
+      document.querySelector("#" + id).textContent = value;
+    }
+
+    function renderSegmentInputs(segments, counts) {
+      segmentBody.innerHTML = segments.map((segment, index) => `
+        <tr>
+          <td>${segment.index}</td>
+          <td data-range-from="${index}">${formatNumber(segment.from)}</td>
+          <td data-range-to="${index}">${formatNumber(segment.to)}</td>
+          <td><input data-count="${index}" type="number" min="0" step="1" value="${counts[index] || 0}" aria-label="Кандидаты в сегменте ${segment.index}"></td>
+        </tr>
+      `).join("");
+
+      segmentBody.querySelectorAll("input").forEach((input) => {
+        input.addEventListener("input", render);
+      });
+    }
+
+    function updateSegmentRanges(segments) {
+      segments.forEach((segment, index) => {
+        const fromCell = document.querySelector(`[data-range-from="${index}"]`);
+        const toCell = document.querySelector(`[data-range-to="${index}"]`);
+        if (fromCell) fromCell.textContent = formatNumber(segment.from);
+        if (toCell) toCell.textContent = formatNumber(segment.to);
+      });
+    }
+
+    function currentReport() {
+      const maxSalary = numberValue("maxSalary");
+      const totalCandidates = numberValue("totalCandidates");
+      const segments = buildSegments(maxSalary);
+      const counts = getCounts();
+      const withSalary = counts.reduce((sum, count) => sum + count, 0);
+      const median = groupedMedian(segments, counts, withSalary);
+      const missing = Math.max(0, totalCandidates - withSalary);
+      const missingShare = totalCandidates ? missing / totalCandidates : 0;
+      const analysisDate = new Date(textValue("analysisDate") + "T00:00:00");
+      const periodStart = new Date(analysisDate);
+      periodStart.setDate(periodStart.getDate() - 30);
+
+      return {
+        vacancy: textValue("vacancy"),
+        region: textValue("region"),
+        resumeQuery: textValue("resumeQuery"),
+        segments,
+        counts,
+        totalCandidates,
+        withSalary,
+        median,
+        missing,
+        missingShare,
+        periodStart,
+        analysisDate
+      };
+    }
+
+    function render() {
+      const report = currentReport();
+      updateSegmentRanges(report.segments);
+
+      setText("metricTotal", formatNumber(report.totalCandidates));
+      setText("metricWithSalary", formatNumber(report.withSalary));
+      setText("metricAverage", formatMoney(report.median));
+      setText("metricMissing", formatPercent(report.missingShare));
+
+      setText("outVacancy", report.vacancy || "—");
+      setText("outRegion", report.region || "—");
+      setText("outDateFrom", formatDate(report.periodStart));
+      setText("outDateTo", formatDate(report.analysisDate));
+      setText("outTotal", formatNumber(report.totalCandidates));
+      setText("outWithSalary", formatNumber(report.withSalary));
+      setText("outAverage", formatMoney(report.median));
+
+      const maxSegmentCount = Math.max(...report.counts);
+
+      resultRows.innerHTML = report.segments.map((segment, index) => {
+        const count = report.counts[index] || 0;
+        const share = report.withSalary ? count / report.withSalary : 0;
+        return `
+          <tr>
+            <td>${formatNumber(segment.from)}</td>
+            <td>${formatNumber(segment.to)}</td>
+            <td>${formatNumber(count)}</td>
+            <td class="share-cell" style="${shareHeatStyle(count, maxSegmentCount)}">${formatPercent(share)}</td>
+          </tr>
+        `;
+      }).join("");
+
+      const query = report.resumeQuery;
+      const queryLink = document.querySelector("#outQuery");
+      queryLink.textContent = query || "—";
+      queryLink.href = query || "#";
+      statusEl.textContent = "";
+    }
+
+    function reportAsTsv() {
+      const report = currentReport();
+      const rows = [
+        ["Зарплатные ожидания кандидатов"],
+        [],
+        ["Желаемая должность", report.vacancy],
+        ["Регион проживания", report.region],
+        ["Данные за период", formatDate(report.periodStart), formatDate(report.analysisDate)],
+        ["Целевых кандидатов в регионе", report.totalCandidates],
+        ["Кандидатов указавших зарплатные ожидания", report.withSalary],
+        ["Медианные ожидания кандидатов", Math.round(report.median)],
+        [],
+        ["ОТ", "ДО", "Кол-во кандидатов", "Доля сегмента от всех кандидатов"],
+        ...report.segments.map((segment, index) => {
+          const count = report.counts[index] || 0;
+          const share = report.withSalary ? count / report.withSalary : 0;
+          return [segment.from, segment.to, count, share];
+        }),
+        [],
+        ["Поисковый запрос", report.resumeQuery]
+      ];
+
+      return rows.map((row) => row.map((cell) => String(cell ?? "").replaceAll("\t", " ")).join("\t")).join("\n");
+    }
+
+    async function copyReport() {
+      try {
+        await navigator.clipboard.writeText(reportAsTsv());
+        statusEl.textContent = "Таблица скопирована.";
+      } catch (error) {
+        statusEl.textContent = "Не удалось скопировать автоматически.";
+      }
+    }
+
+    function downloadCsv() {
+      const csv = reportAsTsv();
+      const blob = new Blob(["\ufeff" + csv], { type: "text/tab-separated-values;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "salary-market-analysis.tsv";
+      document.body.appendChild(link);
+      link.click();
+      URL.revokeObjectURL(link.href);
+      link.remove();
+      statusEl.textContent = "Файл скачан.";
+    }
+
+    function setInputsCollapsed(isCollapsed) {
+      document.body.classList.toggle("inputs-collapsed", isCollapsed);
+      layoutShell.classList.toggle("is-collapsed", isCollapsed);
+    }
+
+    function toggleQuery() {
+      const hidden = !queryWrap.classList.contains("query-hidden");
+      queryWrap.classList.toggle("query-hidden", hidden);
+      toggleQueryButton.textContent = hidden ? "+" : "−";
+      toggleQueryButton.setAttribute("aria-label", hidden ? "Показать поисковый запрос" : "Скрыть поисковый запрос");
+      toggleQueryButton.setAttribute("title", hidden ? "Показать поисковый запрос" : "Скрыть поисковый запрос");
+    }
+
+    renderSegmentInputs(buildSegments(numberValue("maxSalary")), initialCounts);
+    ids.forEach((id) => document.querySelector("#" + id).addEventListener("input", render));
+    document.querySelector("#copyReport").addEventListener("click", copyReport);
+    document.querySelector("#downloadCsv").addEventListener("click", downloadCsv);
+    document.querySelector("#printReport").addEventListener("click", () => window.print());
+    document.querySelector("#hideInputs").addEventListener("click", () => setInputsCollapsed(true));
+    document.querySelector("#showInputs").addEventListener("click", () => setInputsCollapsed(false));
+    toggleQueryButton.addEventListener("click", toggleQuery);
+    render();
+  </script>
+</body>
+</html>
